@@ -10,7 +10,7 @@ import { getLauncher, runServiceHook } from './utils'
 const log = logger('wdio-cli:Launcher')
 
 class Launcher {
-    constructor (configFile, argv) {
+    constructor (configFile, argv = {}) {
         this.argv = argv
         this.configFile = configFile
 
