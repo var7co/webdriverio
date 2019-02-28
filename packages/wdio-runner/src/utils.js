@@ -3,7 +3,7 @@ import logger from '@wdio/logger'
 import { remote, multiremote, attach } from 'webdriverio'
 import { DEFAULT_CONFIGS } from '@wdio/config'
 
-const log = logger('wdio-local-runner:utils')
+const log = logger('@wdio/local-runner:utils')
 
 const MERGE_OPTIONS = { clone: false }
 
@@ -76,4 +76,28 @@ export async function initialiseInstance (config, capabilities, isMultiremote) {
     }
 
     return browser
+}
+
+/**
+ * Filter logTypes based on filter
+ * @param  {string[]} excludeDriverLogs logTypes filter
+ * @param  {string[]} driverLogTypes    available driver log types
+ * @return {string[]}                   logTypes
+ */
+export function filterLogTypes(excludeDriverLogs, driverLogTypes) {
+    let logTypes = [...driverLogTypes]
+
+    if (Array.isArray(excludeDriverLogs)) {
+        log.debug('filtering logTypes', logTypes)
+
+        if (excludeDriverLogs.length === 1 && excludeDriverLogs[0] === '*') { // exclude all logTypes
+            logTypes = []
+        } else {
+            logTypes = logTypes.filter(x => !excludeDriverLogs.includes(x)) // exclude specific logTypes
+        }
+
+        log.debug('filtered logTypes', logTypes)
+    }
+
+    return logTypes
 }

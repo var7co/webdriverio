@@ -8,9 +8,9 @@ import { initialiseServices, initialisePlugin } from '@wdio/utils'
 import { ConfigParser } from '@wdio/config'
 
 import BaseReporter from './reporter'
-import { runHook, initialiseInstance } from './utils'
+import { runHook, initialiseInstance, filterLogTypes } from './utils'
 
-const log = logger('wdio-runner')
+const log = logger('@wdio/runner')
 
 export default class Runner extends EventEmitter {
     constructor () {
@@ -54,6 +54,7 @@ export default class Runner extends EventEmitter {
         this.configParser.merge(server)
 
         this.config = this.configParser.getConfig()
+        logger.setLogLevelsConfig(this.config.logLevels)
         this.isMultiremote = !Array.isArray(this.configParser.getCapabilities())
         initialiseServices(this.config, caps).map(::this.configParser.addService)
 
@@ -120,8 +121,8 @@ export default class Runner extends EventEmitter {
          */
         let failures = 0
         try {
-            failures = failures = await this.framework.run(cid, this.config, specs, caps, this.reporter)
-            await this._fetchDriverLogs(this.config)
+            failures = await this.framework.run(cid, this.config, specs, caps, this.reporter)
+            await this._fetchDriverLogs(this.config, caps.excludeDriverLogs)
         } catch (e) {
             log.error(e)
             this.emit('error', e)
@@ -173,6 +174,7 @@ export default class Runner extends EventEmitter {
         /**
          * register command event
          */
+        // console.log(this)
         browser.on('command', (command) => this.reporter.emit(
             'client:beforeCommand',
             Object.assign(command, { sessionId: browser.sessionId })
@@ -192,7 +194,7 @@ export default class Runner extends EventEmitter {
     /**
      * fetch logs provided by browser driver
      */
-    async _fetchDriverLogs (config) {
+    async _fetchDriverLogs (config, excludeDriverLogs) {
         /**
          * only fetch logs if
          */
@@ -213,7 +215,8 @@ export default class Runner extends EventEmitter {
             return
         }
 
-        const logTypes = await global.browser.getLogTypes()
+        const logTypes = filterLogTypes(excludeDriverLogs, await global.browser.getLogTypes())
+
         log.debug(`Fetching logs for ${logTypes.join(', ')}`)
         return Promise.all(logTypes.map(async (logType) => {
             let logs

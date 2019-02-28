@@ -8,7 +8,7 @@ import { initialisePlugin, initialiseServices } from '@wdio/utils'
 import CLInterface from './interface'
 import { runServiceHook } from './utils'
 
-const log = logger('wdio-cli:Launcher')
+const log = logger('@wdio/cli:Launcher')
 
 class Launcher {
     constructor (configFile, argv) {
@@ -26,6 +26,8 @@ class Launcher {
         if (config.outputDir) {
             process.env.WDIO_LOG_PATH = path.join(config.outputDir, 'wdio.log')
         }
+
+        logger.setLogLevelsConfig(config.logLevels)
 
         const totalWorkerCnt = Array.isArray(capabilities)
             ? capabilities
@@ -100,6 +102,17 @@ class Launcher {
             return new Promise((resolve) => {
                 this.resolve = resolve
                 this.startInstance(this.configParser.getSpecs(), caps, 0)
+            })
+        }
+
+        /**
+         * fail if no caps were found
+         */
+        if (!caps || !caps.length) {
+            return new Promise((resolve) => {
+                log.error('Missing capabilities, exiting with failure')
+                this.interface.updateView()
+                return resolve(1)
             })
         }
 
